@@ -15,36 +15,23 @@ An asynchronous Telegram bot for high-efficiency task tracking, built with **Pyt
 
 ---
 
-## 🏗 Database Schema
+## 🗄️ Database Schema
 
 To ensure data integrity and optimized querying, the system utilizes the following relational structure:
 
 ```sql
 CREATE TABLE tasks (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id    INTEGER NOT NULL,
-    name       TEXT NOT NULL,
-    status     TEXT NOT NULL DEFAULT 'pending',
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+```
 
-## 🚀 Quick Start
+<div align="center">
+  <sub>
+    <b>Ziyodaxon Jabborova</b> | 2026 | <b>Python Backend Engineer</b>
+  </sub>
+</div>
 
-1. **Environment:** Create `.env` with `BOT_TOKEN=your_token`.
-2. **Install:** `pip install -r requirements.txt`
-3. **Run:** `python main.py`
-
----
-
-## 🏗 Schema Preview
-
-```sql
-CREATE TABLE tasks (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id    INTEGER NOT NULL,
-    name       TEXT NOT NULL,
-    status     TEXT NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
----
-<div align="center"> <sub><b>Ziyodaxon Jabborova</b> | 2026 | <b>Python Backend Engineer</b></sub> </div>
