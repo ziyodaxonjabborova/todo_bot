@@ -15,14 +15,18 @@ An asynchronous Telegram bot for high-efficiency task tracking, built with **Pyt
 
 ---
 
-## 🛠 Key Features
+## 🏗 Database Schema
 
-- **Full CRUD:** Create, Read, Update, and Delete tasks.
-- **Dynamic Filtering:** Query by `pending`, `done`, or `all`.
-- **Input Sanitization:** Case-insensitive search and whitespace stripping.
-- **Atomic Commits:** Secure database transactions using Context Managers.
+To ensure data integrity and optimized querying, the system utilizes the following relational structure:
 
----
+```sql
+CREATE TABLE tasks (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL,
+    name       TEXT NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 ## 🚀 Quick Start
 
