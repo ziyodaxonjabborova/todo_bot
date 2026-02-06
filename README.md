@@ -1,42 +1,45 @@
-# 📝 Advanced Telegram Task Management Bot
+# 📝 Async Task Manager Bot
 
-A robust and scalable Telegram bot designed for efficient task management. Built with **Python** and **Aiogram**, this bot demonstrates clean architecture, asynchronous programming, and seamless database integration.
-
----
-
-## 🚀 Key Features
-
-- **CRUD Operations:** Full Create, Read, Update, and Delete capabilities for personal tasks.
-- **State Management:** Real-time task tracking with "Pending" and "Done" statuses.
-- **Intuitive UX:** Optimized navigation with custom keyboard markups and "Back" button logic.
-- **Filterable Views:** Efficiently categorize tasks (All, Pending, Completed) for better productivity.
-- **Scalable Architecture:** Modular code structure ensuring easy maintenance and feature expansion.
+An asynchronous Telegram bot for high-efficiency task tracking, built with **Python 3.10+** and **Aiogram 3.x**. Focuses on clean state management and optimized SQLite3 interactions.
 
 ---
 
-## 🛠 Tech Stack
+## ⚡ Tech Stack & Core Logic
 
-- **Language:** Python 3.10+
-- **Framework:** [Aiogram 3.x](https://docs.aiogram.dev/) (Asynchronous Telegram Bot API)
-- **Database:** PostgreSQL / SQLite (via SQLAlchemy or Native)
-- **Environment:** Dotenv for secure API Key management
-
----
-
-## 🏗 System Architecture
-
-The bot follows a modular approach to separate business logic from the Telegram API interface:
-1. **Handlers:** Managing user commands and message flows.
-2. **Keyboards:** Dynamic button generation for a fluid UI.
-3. **Database Layer:** Secure and optimized data persistence.
+- **Framework:** `Aiogram 3.x` (Asynchronous Bot API)
+- **Database:** `SQLite3` (Embedded Relational Data)
+- **State Mgmt:** `python-dotenv` & `environs` (Secure Config)
+- **Logic:** Decoupled Database Layer (CRUD optimized)
 
 
 
 ---
 
-## 🔧 Installation & Setup
+## 🛠 Key Features
 
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/ziyodaxonjabborova/telegram-todo-bot.git](https://github.com/ziyodaxonjabborova/telegram-todo-bot.git)
-   cd telegram-todo-bot
+- **Full CRUD:** Create, Read, Update, and Delete tasks.
+- **Dynamic Filtering:** Query by `pending`, `done`, or `all`.
+- **Input Sanitization:** Case-insensitive search and whitespace stripping.
+- **Atomic Commits:** Secure database transactions using Context Managers.
+
+---
+
+## 🚀 Quick Start
+
+1. **Environment:** Create `.env` with `BOT_TOKEN=your_token`.
+2. **Install:** `pip install -r requirements.txt`
+3. **Run:** `python main.py`
+
+---
+
+## 🏗 Schema Preview
+
+```sql
+CREATE TABLE tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+<sub>Ziyodaxon Jabborova | 2026 | Python Backend Engineer</sub>
