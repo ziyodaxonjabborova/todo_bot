@@ -3,163 +3,170 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from buttons import CRUD_BUTTON, SEE_BUTTON, BACK_BUTTON, UPDATE_BUTTON
+# Importing updated keyboard names
+from buttons import (
+    MAIN_MENU_KEYBOARD, 
+    TASK_FILTER_KEYBOARD, 
+    NAVIGATION_BACK_KEYBOARD, 
+    TASK_UPDATE_KEYBOARD
+)
 from states import DataTask
-from database import add_task as db_add_task, get_tasks_by_status, update_task_name, delete_task, update_task_status
+from database import (
+    add_task as db_add_task, 
+    get_tasks_by_status, 
+    update_task_name, 
+    delete_task, 
+    update_task_status
+)
 
 router = Router()
 
-# 🔹 /start handler
-@router.message(CommandStart())
-async def start_handler(message: Message):
-    await message.answer("📝 Quyidagilardan birini tanlang:", reply_markup=CRUD_BUTTON)
+# --- Utility Function ---
+async def return_to_main_menu(message: Message, state: FSMContext, text: str = "Returning to main menu:"):
+    """Resets the state and sends the user back to the main dashboard."""
+    await state.clear()
+    await message.answer(text, reply_markup=MAIN_MENU_KEYBOARD)
 
-# ➕ Add task
-@router.message(F.text == "➕ Add task")
-async def add_task(message: Message, state: FSMContext):
-    await message.answer("✍️ Yangi vazifa nomini kiriting:", reply_markup=BACK_BUTTON)
+# --- Start Handler ---
+@router.message(CommandStart())
+async def cmd_start(message: Message):
+    """Initial greeting and menu display."""
+    await message.answer(
+        "👋 Welcome to Task Orchestrator! Select an option below:", 
+        reply_markup=MAIN_MENU_KEYBOARD
+    )
+
+# --- Add Task Flow ---
+@router.message(F.text == "➕ Add New Task")
+async def start_add_task(message: Message, state: FSMContext):
+    await message.answer("✍️ Please enter the name of the new task:", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.set_state(DataTask.new_task)
 
 @router.message(DataTask.new_task)
-async def save_task(message: Message, state: FSMContext):
-    if message.text == "⬅️ Back":
-        await state.clear()
-        await message.answer("🏠 Asosiy menyuga qaytdingiz:", reply_markup=CRUD_BUTTON)
-        return
+async def process_save_task(message: Message, state: FSMContext):
+    if message.text == "⬅️ Return to Menu":
+        return await return_to_main_menu(message, state)
 
-    task = message.text.strip()
-    db_add_task(message.chat.id, task)
-    await message.answer("✅ Vazifa muvaffaqiyatli saqlandi!", reply_markup=CRUD_BUTTON)
+    task_name = message.text.strip()
+    db_add_task(message.from_user.id, task_name)
+    await message.answer(f"✅ Task '{task_name}' successfully saved!", reply_markup=MAIN_MENU_KEYBOARD)
     await state.clear()
 
-# 📋 See tasks
-@router.message(F.text == "📋 See tasks")
-async def see_button(message: Message):
-    await message.answer("📝 Bittasini tanlang:", reply_markup=SEE_BUTTON)
-    await message.answer("⬅️ Orqaga qaytish uchun tugmani bosing 👇", reply_markup=BACK_BUTTON)
+# --- View Tasks Flow ---
+@router.message(F.text == "📋 View My Tasks")
+async def show_filter_options(message: Message):
+    await message.answer("🔍 Select task category to view:", reply_markup=TASK_FILTER_KEYBOARD)
+    await message.answer("👇 Or use the button below to go back:", reply_markup=NAVIGATION_BACK_KEYBOARD)
 
-@router.callback_query(F.data.startswith("see_"))
-async def see_tasks(call: CallbackQuery):
+@router.callback_query(F.data.startswith("filter_"))
+async def process_view_tasks(call: CallbackQuery):
     status = call.data.split("_")[1]
     tasks = get_tasks_by_status(call.from_user.id, status)
 
     if not tasks:
-        await call.message.answer("❌ Hozircha bu toifada vazifa yo'q.", reply_markup=BACK_BUTTON)
+        await call.message.answer(f"❌ No tasks found in category: {status.upper()}.", reply_markup=NAVIGATION_BACK_KEYBOARD)
         return
 
-    text = "📝 <b>Topilgan vazifalar:</b>\n\n"
+    report = f"📝 <b>Active Tasks ({status.capitalize()}):</b>\n\n"
     for task in tasks:
-        text += f"🔹 {task['name']} — <i>{task['status'].capitalize()}</i>\n"
+        report += f"🔹 {task['name']} — <i>{task['status'].capitalize()}</i>\n"
 
-    await call.message.answer(text, parse_mode="HTML", reply_markup=BACK_BUTTON)
+    await call.message.answer(report, parse_mode="HTML", reply_markup=NAVIGATION_BACK_KEYBOARD)
+    await call.answer()
 
-# ⬅️ Back
-@router.message(F.text == "⬅️ Back")
-async def back_to_menu(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer("🏠 Asosiy menyuga qaytdingiz:", reply_markup=CRUD_BUTTON)
+# --- Navigation Handler ---
+@router.message(F.text == "⬅️ Return to Menu")
+async def cmd_back(message: Message, state: FSMContext):
+    await return_to_main_menu(message, state)
 
-# ✏️ Update task
-@router.message(F.text == "✏️ Update task")
-async def update_button(message: Message):
-    await message.answer("Qaysi birini o'zgartirmoqchisiz:", reply_markup=UPDATE_BUTTON)
+# --- Update Task Flow ---
+@router.message(F.text == "✏️ Edit Task")
+async def show_edit_options(message: Message):
+    await message.answer("⚙️ What would you like to modify?", reply_markup=TASK_UPDATE_KEYBOARD)
 
-# 📝 Update name
-@router.callback_query(F.data == "update_name")
-async def update_name_start(call: CallbackQuery, state: FSMContext):
-    await call.message.answer("✏️ Qaysi task nomini o‘zgartirmoqchisiz?", reply_markup=BACK_BUTTON)
+@router.callback_query(F.data == "update_title")
+async def start_rename_task(call: CallbackQuery, state: FSMContext):
+    await call.message.answer("📝 Enter the current name of the task you want to rename:", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.set_state(DataTask.get_old_name)
     await state.update_data(user_id=call.from_user.id)
+    await call.answer()
 
 @router.message(DataTask.get_old_name)
-async def get_old_name(message: Message, state: FSMContext):
-    if message.text == "⬅️ Back":
-        await state.clear()
-        await message.answer("🏠 Asosiy menyuga qaytdingiz:", reply_markup=CRUD_BUTTON)
-        return
+async def process_old_name(message: Message, state: FSMContext):
+    if message.text == "⬅️ Return to Menu":
+        return await return_to_main_menu(message, state)
 
     await state.update_data(old_name=message.text)
-    await message.answer("🆕 Yangi nomni kiriting:", reply_markup=BACK_BUTTON)
+    await message.answer("🆕 Enter the new name for this task:", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.set_state(DataTask.get_new_name)
 
 @router.message(DataTask.get_new_name)
-async def get_new_name(message: Message, state: FSMContext):
-    if message.text == "⬅️ Back":
-        await state.clear()
-        await message.answer("🏠 Asosiy menyuga qaytdingiz:", reply_markup=CRUD_BUTTON)
-        return
+async def process_new_name(message: Message, state: FSMContext):
+    if message.text == "⬅️ Return to Menu":
+        return await return_to_main_menu(message, state)
 
     data = await state.get_data()
-    user_id = data["user_id"]
-    old_name = data["old_name"]
-    new_name = message.text
-
-    result = update_task_name(user_id, old_name, new_name)
-    if result:
-        await message.answer("✅ Task nomi muvaffaqiyatli o‘zgartirildi!", reply_markup=CRUD_BUTTON)
+    success = update_task_name(data["user_id"], data["old_name"], message.text)
+    
+    if success:
+        await message.answer("✅ Task renamed successfully!", reply_markup=MAIN_MENU_KEYBOARD)
     else:
-        await message.answer("⚠️ Bunday nomdagi task topilmadi. ⬅️ Back tugmasini bosing yoki bosh menyuga qayting.", reply_markup=BACK_BUTTON)
+        await message.answer("⚠️ Task not found. Please verify the name and try again.", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.clear()
 
-# 🔄 Update status
+# --- Status Update Flow ---
 @router.callback_query(F.data == "update_status")
-async def update_status_start(call: CallbackQuery, state: FSMContext):
-    await call.message.answer("🔄 Qaysi taskning statusini o‘zgartirmoqchisiz?", reply_markup=BACK_BUTTON)
+async def start_toggle_status(call: CallbackQuery, state: FSMContext):
+    await call.message.answer("🔄 Enter the name of the task to update status:", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.set_state(DataTask.get_status_task)
     await state.update_data(user_id=call.from_user.id)
+    await call.answer()
 
 @router.message(DataTask.get_status_task)
-async def get_status_task(message: Message, state: FSMContext):
-    if message.text == "⬅️ Back":
-        await state.clear()
-        await message.answer("🏠 Asosiy menyuga qaytdingiz:", reply_markup=CRUD_BUTTON)
-        return
+async def process_status_target(message: Message, state: FSMContext):
+    if message.text == "⬅️ Return to Menu":
+        return await return_to_main_menu(message, state)
 
     await state.update_data(task_name=message.text)
-    await message.answer("🟢 Yangi statusni kiriting (pending yoki done):", reply_markup=BACK_BUTTON)
+    await message.answer("🟢 Enter new status (pending/done):", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.set_state(DataTask.get_new_status)
 
 @router.message(DataTask.get_new_status)
-async def get_new_status(message: Message, state: FSMContext):
-    if message.text == "⬅️ Back":
-        await state.clear()
-        await message.answer("🏠 Asosiy menyuga qaytdingiz:", reply_markup=CRUD_BUTTON)
-        return
+async def process_status_update(message: Message, state: FSMContext):
+    if message.text == "⬅️ Return to Menu":
+        return await return_to_main_menu(message, state)
 
-    data = await state.get_data()
-    user_id = data["user_id"]
-    task_name = data["task_name"]
-    new_status = message.text.lower()
-
+    new_status = message.text.lower().strip()
     if new_status not in ["pending", "done"]:
-        await message.answer("⚠️ Status noto'g'ri kiritildi. Iltimos 'pending' yoki 'done' yozing:", reply_markup=BACK_BUTTON)
+        await message.answer("⚠️ Invalid status. Use 'pending' or 'done':", reply_markup=NAVIGATION_BACK_KEYBOARD)
         return  
 
-    result = update_task_status(user_id, task_name, new_status)
-    if result:
-        await message.answer(f"✅ Status '{new_status}' ga o'zgartirildi!", reply_markup=CRUD_BUTTON)
+    data = await state.get_data()
+    success = update_task_status(data["user_id"], data["task_name"], new_status)
+    
+    if success:
+        await message.answer(f"✅ Status updated to '{new_status.upper()}'!", reply_markup=MAIN_MENU_KEYBOARD)
     else:
-        await message.answer("⚠️ Bunday nomdagi task topilmadi!", reply_markup=BACK_BUTTON)
-
+        await message.answer("⚠️ Task not found!", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.clear()
 
-# 🗑 Delete task
-@router.message(F.text == "🗑 Delete task")
-async def delete_task_start(message: Message, state: FSMContext):
-    await message.answer("🗑 Qaysi taskni o'chirmoqchisiz?", reply_markup=BACK_BUTTON)
+# --- Delete Task Flow ---
+@router.message(F.text == "🗑 Remove Task")
+async def start_delete_task(message: Message, state: FSMContext):
+    await message.answer("🗑 Which task would you like to permanently remove?", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.set_state(DataTask.get_delete_task)
-    await state.update_data(user_id=message.chat.id)
+    await state.update_data(user_id=message.from_user.id)
 
 @router.message(DataTask.get_delete_task)
-async def delete_task_finish(message: Message, state: FSMContext):
+async def process_deletion(message: Message, state: FSMContext):
+    if message.text == "⬅️ Return to Menu":
+        return await return_to_main_menu(message, state)
+
     data = await state.get_data()
-    user_id = data["user_id"]
-    task_name = message.text
-
-    result = delete_task(user_id, task_name)
-    if result:
-        await message.answer("🗑 Task muvaffaqiyatli o'chirildi!", reply_markup=CRUD_BUTTON)
+    success = delete_task(data["user_id"], message.text)
+    
+    if success:
+        await message.answer("🗑 Task successfully deleted!", reply_markup=MAIN_MENU_KEYBOARD)
     else:
-        await message.answer("⚠️ Bunday task topilmadi. ⬅️ Back tugmasini bosing va qayta urinib ko'ring.", reply_markup=BACK_BUTTON)
-
+        await message.answer("⚠️ Task not found. Verify the name and try again.", reply_markup=NAVIGATION_BACK_KEYBOARD)
     await state.clear()
