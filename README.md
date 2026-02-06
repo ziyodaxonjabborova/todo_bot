@@ -36,10 +36,11 @@ An asynchronous Telegram bot for high-efficiency task tracking, built with **Pyt
 
 ```sql
 CREATE TABLE tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL,
+    name       TEXT NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-<sub>Ziyodaxon Jabborova | 2026 | Python Backend Engineer</sub>
+---
+<div align="center"> <sub><b>Ziyodaxon Jabborova</b> | 2026 | <b>Python Backend Engineer</b></sub> </div>
